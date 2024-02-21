@@ -7,7 +7,6 @@
     "change": "modern change",
     "bump": "modern bump",
     "pre": "modern pre",
-    "prepare": "husky install",
     "change-status": "modern change-status",
     "gen-release-note": "modern gen-release-note",
     "release": "modern release",
