@@ -44,7 +44,7 @@ const run = ({ rootDir, localScript = "", clearCache = false }) => {
 
   // install
   console.time("==== install timing ====");
-  execa(`pnpm i --ignore-script`);
+  execa(`pnpm i --ignore-script  --no-frozen-lockfile`);
   console.timeEnd("==== install timing ====");
 
   // new action case

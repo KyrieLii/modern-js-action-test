@@ -8,26 +8,27 @@ on:
     inputs:
         version:
           description: 'new action version:'
-          required: false
+          required: true
           default: 'latest'
 
 jobs:
-  module-linux:
+  new-action-linux:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
+    
+      - name: Install Pnpm
+        run: npm i -g pnpm
 
-      - name: Run Benchmark
-        run: MODERN_VERSION=${{ github.event.inputs.branch }} node ./scripts/new-action.js
+      - name: Run Script
+        run: MODERN_VERSION=${{ github.event.inputs.version || 'latest' }} node ./scripts/new-action.mjs
   
       - name: Create or Update Comment
         uses: peter-evans/create-or-update-comment@v4.0.0
         with:
           issue-number: 1
-          body: |
-            version: 1.0.0
+          body-path: 'result.md'
 
