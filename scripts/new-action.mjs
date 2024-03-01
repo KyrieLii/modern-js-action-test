@@ -92,8 +92,8 @@ const repeat = (times = 3, clearCache = false) => {
 };
 
 const main = () => {
-  const noCache = repeat(1, true);
-  const withCache = repeat(1, false);
+  const noCache = repeat(3, true);
+  const withCache = repeat(3, false);
 
   fs.writeFileSync(
     path.join(__dirname, "../result.md"),
