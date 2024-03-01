@@ -1,11 +1,13 @@
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 import { execSync } from "child_process";
 import { clearCodesmithCache } from "./utils.mjs";
 
-const __dirname = path.resolve();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const run = ({ rootDir, localScript, clearCache = false }) => {
+const run = ({ rootDir, localScript = "", clearCache = false }) => {
   const testConfig = {
     noNeedInstall: true,
     actionType: "function",
@@ -60,7 +62,7 @@ const run = ({ rootDir, localScript, clearCache = false }) => {
     console.log(command);
     execa(command);
   } else {
-    execa(`pnpm run new --config=${JSON.stringify(testConfig)} --debug`);
+    execa(`pnpm run new --config='${JSON.stringify(testConfig)}' --debug`);
   }
   const timing = Date.now() - begin;
   console.timeEnd("==== new timing ====");
@@ -71,20 +73,44 @@ const run = ({ rootDir, localScript, clearCache = false }) => {
   return timing;
 };
 
-const main = () => {
-  let time = 3;
+const repeat = (times = 3, clearCache = false) => {
+  let time = times;
   const res = [];
 
   while (time > 0) {
     const timing = run({
       rootDir: path.join(__dirname, "../mwa"),
-      version: "latest",
-      clearCache: true,
+      clearCache,
     });
     res.push(timing);
     time--;
   }
-  console.log(res);
+  return {
+    list: res,
+    avg: res.reduce((a, b) => a + b, 0) / res.length,
+  };
+};
+
+const main = () => {
+  const noCache = repeat(1, true);
+  const withCache = repeat(1, false);
+
+  fs.writeFileSync(
+    path.join(__dirname, "../result.md"),
+    `
+# ${process.env.MODERN_VERSION ?? "latest"}
+
+## With Cache
+
+${withCache.list.join(",")}  
+Avg: ${withCache.avg}
+
+## No Cache
+
+${noCache.list.join(",")}  
+Avg: ${noCache.avg}
+  `
+  );
 };
 
 main();
