@@ -87,7 +87,7 @@ const repeat = (times = 3, clearCache = false) => {
   }
   return {
     list: res,
-    avg: res.reduce((a, b) => a + b, 0) / res.length,
+    avg: `${Math.floor(res.reduce((a, b) => a + b, 0) / res.length) / 1000}s`,
   };
 };
 
@@ -98,16 +98,16 @@ const main = () => {
   fs.writeFileSync(
     path.join(__dirname, "../result.md"),
     `
-# ${process.env.MODERN_VERSION ?? "latest"}
+# ${process.env.MODERN_VERSION ?? "Latest"}
 
 ## With Cache
 
-${withCache.list.join(",")}  
+Each: ${withCache.list.join(",")} (ms)  
 Avg: ${withCache.avg}
 
 ## No Cache
 
-${noCache.list.join(",")}  
+Each: ${noCache.list.join(",")} (ms)  
 Avg: ${noCache.avg}
   `
   );
