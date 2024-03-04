@@ -1,4 +1,4 @@
-name: New Action Benchmark
+name: Test Comment CI
 
 on:
   workflow_dispatch:
