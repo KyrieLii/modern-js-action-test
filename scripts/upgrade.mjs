@@ -1,0 +1,101 @@
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { execSync } from "child_process";
+import { clearCodesmithCache } from "./utils.mjs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const run = ({ rootDir, localScript = "", clearCache = false }) => {
+  const execa = (cmd) => {
+    execSync(cmd, {
+      cwd: rootDir,
+      stdio: "inherit",
+      stderr: "inherit",
+    });
+  };
+
+  // resolutions version
+  const jsonPath = path.join(rootDir, "package.json");
+  const json = fs.readFileSync(jsonPath, "utf8");
+  const pkg = JSON.parse(json);
+  const version = process.env.MODERN_VERSION ?? "latest";
+
+  if (clearCache) {
+    clearCodesmithCache();
+    execa(`npx --yes clear-npx-cache`);
+  }
+
+  if (!localScript) {
+    pkg.resolutions = {
+      "@modern-js/app-tools": version,
+    };
+    fs.writeFileSync(jsonPath, JSON.stringify(pkg, null, 2));
+  }
+
+  // install
+  console.time("==== install timing ====");
+  execa(`pnpm i --ignore-script  --no-frozen-lockfile`);
+  console.timeEnd("==== install timing ====");
+
+  // new action case
+  const begin = Date.now();
+  console.time("==== upgrade timing ====");
+  if (localScript) {
+    const command = `${localScript} --root-path=${rootDir}`;
+    console.log(command);
+    execa(command);
+  } else {
+    execa(`pnpm run upgrade --no-need-install`);
+  }
+  const timing = Date.now() - begin;
+  console.timeEnd("==== upgrade timing ====");
+
+  // reset
+  execa(`git checkout -- ${rootDir}`);
+
+  return timing;
+};
+
+const repeat = (times = 3, clearCache = false) => {
+  let time = times;
+  const res = [];
+
+  while (time > 0) {
+    const timing = run({
+      rootDir: path.join(__dirname, "../mwa"),
+      clearCache,
+    });
+    res.push(timing);
+    time--;
+  }
+  return {
+    list: res,
+    avg: `${Math.floor(res.reduce((a, b) => a + b, 0) / res.length) / 1000}s`,
+  };
+};
+
+const main = () => {
+  const noCache = repeat(3, true);
+  const withCache = repeat(3, false);
+
+  fs.writeFileSync(
+    path.join(__dirname, "../result.md"),
+    `
+# ${process.env.MODERN_VERSION ?? "Latest"}
+
+## With Cache
+
+Each: ${withCache.list.join(",")} (ms)  
+Avg: ${withCache.avg}
+
+## No Cache
+
+Each: ${noCache.list.join(",")} (ms)  
+Avg: ${noCache.avg}
+  `
+  );
+};
+
+main();
